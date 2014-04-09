@@ -1,0 +1,9 @@
+# Read about fixtures at http://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+one:
+  failure_details: MyText
+  task_id: 1
+
+two:
+  failure_details: MyText
+  task_id: 1
