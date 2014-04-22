@@ -1,3 +1,55 @@
 = Melinis
+Melinis is library for managing background jobs like Rake tasks,cron jobs etc that do some kind of batch processing.
 
-This project rocks and uses MIT-LICENSE.
+Installation
+
+To install Melinis,add it to your Gemfile
+gem "melinis", github: "akarsh/melinis" 
+
+Usage
+Step-1: Initialize:
+melinis = Melinis::Task.start(task_name,options = {})
+Optional Paremeters that can be passed in the options hash:
+  description: Task Description
+  file_path: File Path
+  command: Command that starts the execution of the task
+  individual_retries_limit: Maximum number of times each individual failed entry must be retried
+  bulk_retries_limit: Maximum number of consecutive failed entries that will halt the task execution
+
+Step-2: Failure:
+melinis.failure(task_details,args = {})
+task_details: A hash that will keep a track of the records being processed
+Optional Paremeters that can be passed:
+  task_failure_id: Id of the failed record in case an earlier failed record is tried to be processed again
+  status: 'failure' in case a record fails either for the first time or in subsequent attempts  Or 'success' in case an earlier failed record succedes in the next attempt
+
+Step-3: End:
+ melinis.end(task_details)
+
+
+Example:
+Rake Task:
+
+  task :test_task => :environment do |task|
+
+    #initialize
+    melinis = Melinis::Task.new(task.name,{description: 'Task Description',file_path: '',command: 'rake',individual_retries_limit: 1,bulk_retries_limit: 1})
+    #melinis.task_failures returns the list of records that are still in failed state and have individual retries left
+    if melinis.task_processing.nil?
+      #Define Start condition 
+    else
+      #Start from task_processing.processed_details
+      melinis.task_processing.processed_details
+    end
+    task_details = {}
+    10.times.map{10 * Random.rand(11)}.each do |i|
+      task_details = {:id => i}
+      begin
+        1000/i
+      rescue Exception => e
+        melinis.failure(task_details)
+      end
+    end
+    melinis.end(task_details)
+
+  end

@@ -4,7 +4,7 @@ class CreateMelinisTaskFailures < ActiveRecord::Migration
       t.text :failure_details
       t.integer :task_id
       t.integer :task_processing_id
-      t.integer :retry_count
+      t.integer :retry_count, :default => 0
       t.string :status
 
       t.timestamps
