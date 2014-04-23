@@ -7,6 +7,9 @@ To install Melinis,add it to your Gemfile
 
   gem install "melinis", github: "akarsh/melinis" 
 
+In your rails application run 
+  db:migrate
+
 ==Usage
 ====Step-1: Initialize:
   melinis = Melinis::Task.start(task_name,options = {})
