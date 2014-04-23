@@ -12,7 +12,7 @@ In your rails application run
 
 ==Usage
 ====Step-1: Initialize:
-  melinis = Melinis::Task.start(task_name,options = {})
+  melinis = Melinis::Task.new(task_name,options = {})
 Optional Paremeters that can be passed in the options hash:
 
 * description: Task Description
