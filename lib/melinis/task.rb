@@ -1,33 +1,71 @@
 module Melinis
   class Task
-    attr_reader :task,:task_processing,:task_failures
-
-    def initialize(task_name,options = {})
-      options = {description: '',file_path: '',command: '',individual_retries_limit: 1,bulk_retries_limit: 1}.merge(options)
+    def initialize(task_name, options = {})
+      options = {
+        description => '',
+        file_path => '',
+        command => '',
+        individual_retries_limit => 1,
+        bulk_retries_limit => 1
+      }.merge(options)
       @task = TaskList.find_or_initialize_by_name(task_name)
       @task.update_attributes(options)
-      @task_processing = TaskProcessing.create({:task_id => @task.id})
-      @task_failures = task_failures_to_be_processed
+
+      @last_run = @task.task_processings.last
+      @current_run = TaskProcessing.create!({:task_id => @task.id})
+      @failures = @task.task_failures.to_be_processed(@task.individual_retries_limit)
     end
 
-    def end(processed_details)
-      @task_processing.processed_details = processed_details.to_yaml
-      @task_processing.save!
+    def prepare
+      []
     end
 
-    def failure(failure_details,args = {})
-      args = {:task_failure_id => nil,:status => 'failure'}.merge(args)
-      task_failure = TaskFailure.find_by_id(args[:task_failure_id])
-      if task_failure
-        task_failure.increment(:retry_count).update_attributes({:failure_details => failure_details.to_yaml,:status => args[:status]})
-      else
-        TaskFailure.create(:task_processing_id => @task_processing.id,:task_id => @task.id,:failure_details => failure_details.to_yaml,:status => 'failure')
+    def execute(unit)
+      raise NotImplementedError
+    end
+
+    def execution_failure(unit)
+      {}
+    end
+
+    def wrapup
+      {}
+    end
+
+    def run
+      begin
+        data = prepare
+        data.each do |unit|
+          begin
+            execute(unit)
+          rescue Exception => e
+            failure(execution_failure(unit))
+          end
+        end
+      rescue Exception => e
+        failure({})
+      ensure
+        @current_run.processed_details = wrapup.to_yaml
+        @current_run.save!
       end
-    end	
-
-    def task_failures_to_be_processed
-      @task.task_failures.where("status = ? AND retry_count < ?",'failure',@task.individual_retries_limit)
     end
 
+    def failure(failure_details, args = {})
+      args = {:task_failure_id => nil, :status => 'failure'}.merge(args)
+      if args[:task_failure_id].nil?
+        TaskFailure.create!({
+          :task_processing_id => @current_run.id,
+          :task_id => @task.id,
+          :failure_details => failure_details.to_yaml,
+          :status => 'failure'
+        })
+      else
+        task_failure = TaskFailure.find_by_id(args[:task_failure_id])
+        task_failure.increment(:retry_count).update_attributes({
+          :failure_details => failure_details.to_yaml,
+          :status => args[:status]
+        })
+      end
+    end
   end
 end
