@@ -2,11 +2,11 @@ module Melinis
   class Task
     def initialize(task_name, options = {})
       options = {
-        description => '',
-        file_path => '',
-        command => '',
-        individual_retries_limit => 1,
-        bulk_retries_limit => 1
+        :description => '',
+        :file_path => '',
+        :command => '',
+        :individual_retries_limit => 1,
+        :bulk_retries_limit => 1
       }.merge(options)
       @task = TaskList.find_or_initialize_by_name(task_name)
       @task.update_attributes(options)
