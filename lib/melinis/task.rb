@@ -8,11 +8,11 @@ module Melinis
         :individual_retries_limit => 1,
         :bulk_retries_limit => 1
       }.merge(options)
-      @task = TaskList.find_or_initialize_by_name(task_name)
+      @task = Melinis::TaskList.find_or_initialize_by_name(task_name)
       @task.update_attributes(options)
 
       @last_run = @task.task_processings.last
-      @current_run = TaskProcessing.create!({:task_id => @task.id})
+      @current_run = Melinis::TaskProcessing.create!({:task_id => @task.id})
       @failures = @task.task_failures.to_be_processed(@task.individual_retries_limit)
     end
 
@@ -53,14 +53,14 @@ module Melinis
     def failure(failure_details, args = {})
       args = {:task_failure_id => nil, :status => 'failure'}.merge(args)
       if args[:task_failure_id].nil?
-        TaskFailure.create!({
+        Melinis::TaskFailure.create!({
           :task_processing_id => @current_run.id,
           :task_id => @task.id,
           :failure_details => failure_details.to_yaml,
           :status => 'failure'
         })
       else
-        task_failure = TaskFailure.find_by_id(args[:task_failure_id])
+        task_failure = Melinis::TaskFailure.find_by_id(args[:task_failure_id])
         task_failure.increment(:retry_count).update_attributes({
           :failure_details => failure_details.to_yaml,
           :status => args[:status]
