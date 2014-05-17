@@ -1,5 +1,7 @@
 module Melinis
   class Task
+    attr_reader :last_run, :failures
+
     def initialize(task_name, options = {})
       options = {
         :description => '',
