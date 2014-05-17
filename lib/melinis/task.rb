@@ -35,11 +35,14 @@ module Melinis
     end
 
     def run
+      success, total = 0, 0
       begin
         data = prepare
         data.each do |unit|
+          total += 1
           begin
             execute(unit)
+            success += 1
           rescue Exception => e
             failure(execution_failure(unit))
           end
@@ -47,7 +50,10 @@ module Melinis
       rescue Exception => e
         failure({})
       ensure
-        @current_run.processed_details = wrapup.to_yaml
+        @current_run.processed_details = wrapup.merge({
+          :success => success,
+          :total => total
+        }).to_yaml
         @current_run.save!
       end
     end
