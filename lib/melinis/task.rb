@@ -1,6 +1,6 @@
 module Melinis
   class Task
-    attr_reader :last_run, :failures, :logger
+    attr_reader :last_run, :failures, :logger, :current_run
 
     def initialize(task_name, options = {})
       options = {
