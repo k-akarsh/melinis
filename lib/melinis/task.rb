@@ -2,23 +2,45 @@ module Melinis
   class Task
     attr_reader :last_run, :failures, :logger, :current_run
 
-    # Optional Paremeters that can be passed in the initialization step:
+    # Returns a hash with the following keys:
     #
+    # * name: Name of the task - Required
     # * description: Task Description
     # * file_path: File Path
     # * command: Command that starts the execution of the task
     # * individual_retries_limit: Maximum number of times each individual failed entry must be retried
     # * bulk_retries_limit: Maximum number of consecutive failed entries that will halt the task execution
-    def initialize(task_name, options = {})
+    def self.properties
+      raise NotImplementedError
+    end
+
+    def self.setup(first_run_data = {})
       options = {
         :description => '',
         :file_path => '',
         :command => '',
         :individual_retries_limit => 1,
         :bulk_retries_limit => 1
-      }.merge(options)
-      @task = Melinis::TaskList.find_or_initialize_by_name(task_name)
-      @task.update_attributes(options)
+      }.merge(self.properties)
+      task_name = options.delete(:name)
+      raise NoNameError unless task_name
+      task = Melinis::TaskList.find_or_initialize_by(name: task_name)
+      task.update_attributes(options)
+
+      unless first_run_data.blank?
+        current_run = Melinis::TaskProcessing.create!({
+          :task_id => task.id,
+          :processed_details => first_run_data.to_yaml
+        })
+      end
+    end
+
+    def initialize
+      task_name = self.class.properties[:name]
+      raise NoNameError unless task_name
+
+      @task = Melinis::TaskList.find_by_name(task_name)
+      raise SetupError unless @task
 
       @logger = Logger.new("log/%s.log" % [task_name.snakecase])
       @last_run = @task.task_processings.last
