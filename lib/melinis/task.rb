@@ -2,6 +2,13 @@ module Melinis
   class Task
     attr_reader :last_run, :failures, :logger, :current_run
 
+    # Optional Paremeters that can be passed in the initialization step:
+    #
+    # * description: Task Description
+    # * file_path: File Path
+    # * command: Command that starts the execution of the task
+    # * individual_retries_limit: Maximum number of times each individual failed entry must be retried
+    # * bulk_retries_limit: Maximum number of consecutive failed entries that will halt the task execution
     def initialize(task_name, options = {})
       options = {
         :description => '',
@@ -15,6 +22,8 @@ module Melinis
 
       @logger = Logger.new("log/%s.log" % [task_name.snakecase])
       @last_run = @task.task_processings.last
+
+      # 'failures' returns the list of records that are still in failed state and have individual retries left
       @failures = @task.task_failures.to_be_processed(@task.individual_retries_limit)
     end
 
@@ -62,6 +71,12 @@ module Melinis
       end
     end
 
+    # * failure_details: A hash that will keep track of the records being processed
+    #
+    # Optional Parameters that can be passed:
+    # * task_failure_id: Id of the failed record in case an earlier failed record is being processed again
+    # * status: 'failure' in case a record fails either for the first time or in subsequent attempts.
+    #            Or 'success' in case an earlier failed record succeeds in the next attempt.
     def failure(failure_details, args = {})
       task_failure_id = args[:task_failure_id]
       data = failure_details.merge({:exception => args[:exception].to_s})

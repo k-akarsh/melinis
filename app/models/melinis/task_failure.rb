@@ -6,5 +6,9 @@ module Melinis
     def self.to_be_processed(individual_retries_limit)
       where("status = ? AND retry_count < ?", 'failure', individual_retries_limit)
     end
+
+    def data
+      YAML.load(failure_details)
+    end
   end
 end
