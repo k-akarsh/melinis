@@ -85,10 +85,11 @@ module Melinis
         failure({}, {:exception => e})
         logger.error { e }
       ensure
-        @current_run.processed_details = wrapup.merge({
-          :success_count => success,
-          :total => total
-        }).to_yaml
+        success_info = { :success_count => success,
+                         :total => total }
+        wrapup_info = wrapup
+        final_wrapup = wrapup_info.is_a?(Hash) ? wrapup_info.merge(success_info) : success_info
+        @current_run.processed_details = final_wrapup.to_yaml
         @current_run.save!
       end
     end
