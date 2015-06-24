@@ -5,7 +5,7 @@ Melinis is library for managing background jobs like Rake tasks, cron jobs etc. 
 
 To install Melinis, add it to your Gemfile
 
-  gem 'melinis', github: 'k-akarsh/melinis'
+  gem 'melinis', github: 'urbanladder/melinis'
 
 In your rails application, run
 
